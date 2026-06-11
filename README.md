@@ -2,6 +2,8 @@
 
 Public release artifacts for WebCLI are published here by the private source tree release workflow.
 
+see more: https://webcli.sh
+
 Install:
 
 ```sh
