@@ -53,11 +53,26 @@ web inspect                           # re-observe after state change
 ```sh
 web inspect | grep -i submit          # shell-composable
 web inspect --json | jq '.actions'    # machine-readable JSON
-web find "Deploy"                     # search by label
+web find "Deploy"                     # search by label → numbered refs
 web do 7 "my-project"                 # act with a value
+web reveal 4                          # scroll an offscreen ref into view
 web pause "Need human for MFA"        # clean handoff
 web transcript --last 20 --json       # auditable history
 ```
+
+### Three perception commands
+
+- **`web status`** — session health plus blocked, degraded, or unusual browser/page conditions
+- **`web read`** — page text (viewport by default; `--summary`, `--main`, `--ignore-viewport` when needed)
+- **`web inspect`** — numbered actions you can act on
+
+### Numbered refs
+
+`web inspect` returns a **sheet** — a plain-text readout with numbered actions (`1`, `2`, … or `s42:2` with an explicit sheet id).
+
+`web find`, `web form`, and tab searches publish **candidate refs** in the same follow-up lane: after those commands, `web do 1` acts on the latest candidate batch. Numeric refs from `inspect`, `find`, and `form` resolve through the same candidate store on `do`, `type`, `click`, and `hover`.
+
+Refs are **epoch-scoped**. After navigation, submit, or other state-changing actions, re-inspect or re-find before the next `do`. Stale refs outside the current generation fail with an explicit error instead of silently hitting the wrong element.
 
 ---
 
@@ -102,10 +117,24 @@ WebCLI does not replace Playwright, QA, or testing frameworks. It is for **web o
 
 ## Still true
 
-- Refs are intentionally epoch-scoped — inspect after actions that change page state.
+- Refs are intentionally epoch-scoped — inspect or find again after actions that change page state. Stale refs outside the current generation hard-fail with an explicit error.
+- `inspect`, `find`, `form`, and `read` are **viewport-bound by default**. Use `--ignore-viewport` when you need the full document.
+- Offscreen refs are labeled `[offscreen]`. Use `web reveal <ref>` or `web hover <ref>` then `web scroll` before acting.
+- Native `<select>` controls surface as choose/select actions — use `web choose`, not `web type`.
 - Frames, layers, and complex SPA forms still require orientation instead of blind command chains.
 - Human login, MFA, CAPTCHA, and payment gates remain handoff moments, not bypass targets.
 - Sites requiring login or email verification are a hard stop without a pre-existing session — persistent authenticated profiles matter for real workflows on those.
+
+---
+
+## Demos and recordings
+
+```sh
+web set demo-mode    # sticky per profile — highlight before each act + pointer traces
+web unset demo-mode
+```
+
+Demo mode flashes a visible highlight on each ref before `do`, `click`, `type`, `hover`, and `scroll`, and auto-enables pointer traces. Highlights dismiss on scroll so overlays never drift out of alignment.
 
 ---
 
@@ -118,6 +147,7 @@ web teach
 Installs `SKILL.md` into `.claude/`, `.grok/`, `.gemini/`, `.copilot/`, and `.codex/` skill directories. Claude Code, Grok, Gemini CLI, GitHub Copilot, and Codex all get the full browser loop pattern — inspect first, use numbered refs, pause on blockers, report with transcripts. No configuration. No framework adoption.
 
 ```sh
+web teach --force    # overwrite stale skill copies after upgrading the binary
 curl -fsSL https://webcli.sh/agents/SKILL.md -o SKILL.md
 ```
 
@@ -157,8 +187,9 @@ Release assets are immutable per tag and include `SHA256SUMS.txt`.
 ```
 web - controls a real Chromium or Firefox browser session over CDP and BiDi.
 Running `web inspect` returns a numbered action sheet — stable refs you click,
-type into, and act on without writing selectors. Refs reset after page-state
-changes; re-inspect before the next action to get fresh numbers.
+type into, and act on without writing selectors. Refs are epoch-scoped; re-inspect
+or re-find after page-state changes. Stale refs outside the current generation fail
+with an explicit error.
 
 Usage:
   web [--json|--no-json|--text] [--profile <name>] [--frame <frame>] <command>
@@ -166,14 +197,14 @@ Usage:
 
 Core commands:
   go              Navigate or move through history. --new opens in a new tab.
-  inspect         List numbered actions on the page.
-  do              Run a numbered action.
-  click           Click a matched element.
-  type            Type into a field.
+  inspect         List numbered actions on the page (viewport by default).
+  do              Run a numbered action from the sheet or latest find/form batch.
+  click           Click a matched element or ref.
+  type            Type into a field or ref.
   read            Read page text or a target region.
   status          Show session and page state.
-  find            Find matching elements or tabs.
-  form            List visible form fields.
+  find            Find matching elements; returns numbered candidate refs.
+  form            List visible form fields as numbered candidate refs.
   submit          Submit the nearest form.
   press           Send a key press.
   say             Paste text into the focused element.
@@ -183,7 +214,9 @@ Core commands:
   tab             Manage tabs.
   frame           Manage frames.
   profiles        Manage profiles.
-  scroll          Scroll the page or bring a match into view.
+  scroll          Scroll the page or reveal a ref into view.
+  reveal          Scroll a ref or match into the viewport.
+  refs / last     Show saved or latest candidate refs.
   back            Go back in history.
   forward         Go forward in history.
   reload          Reload the tab.
@@ -194,10 +227,12 @@ Handoff commands:
   agent-drives    Return control to the agent.
   pause           Record a human checkpoint.
   resume          Reconnect to the current session.
+  join            Get a BrowserBox join link for shared human-agent access.
 
 Configure commands:
   use             Choose the active browser.
-  set / unset     Enable or disable sticky settings.
+  set / unset     Enable or disable sticky settings (demo-mode, ref-shape,
+                  browser-profile, headless, logging, and more).
   get             Show sticky settings.
   teach           Write the skill file into agent directories.
   agents-md       Print agent instructions.
@@ -205,12 +240,13 @@ Configure commands:
 
 Advanced commands:
   resize          Resize the browser window.
-  snap            Take a screenshot.
-  wait            Wait for a page condition.
-  observe         Return a one-shot page snapshot.
+  snap / capture  Take a screenshot.
+  wait            Wait for a page condition (visible-text:, url:, title:, …).
+  observe         Return a one-shot page snapshot (status + sheet + form refs).
   hover           Hover a target.
   search          Search the web.
-  eval            Evaluate JavaScript in the page context.
+  eval            Evaluate JavaScript in the page context (escape hatch).
+  highlight       Flash a visible overlay on a ref.
   transcript      Inspect the local transcript.
   license         Manage the local license.
   report-issue    Open a GitHub issue from the CLI.
@@ -221,7 +257,10 @@ Core flags:
   --profile <name>     Override the current profile for this command.
   --frame <frame>      Override the frame target for this command.
   --no-json / --text   Force human-readable output.
+  --ignore-viewport    Include offscreen content on inspect/find/form/read.
 ```
+
+Use `web --help` and `web <command> --help` for the full grouped surface, flags, and aliases (`act`, `open`, `select`, …).
 
 ---
 
@@ -240,7 +279,7 @@ Core flags:
 
 - **Site:** [webcli.sh](https://webcli.sh)
 - **Docs:** [webcli.sh/docs.html](https://webcli.sh/docs.html)
-- **Releases:** [github.com/DO-SAY-GO/web-cli/releases](https://github.com/DO-SAY-GO/web-cli/releases)
+- **Releases:** [github.com/DO-SAY-GO/WebCLI/releases](https://github.com/DO-SAY-GO/WebCLI/releases)
 - **Checksums:** [webcli.sh/downloads/SHA256SUMS.txt](https://webcli.sh/downloads/SHA256SUMS.txt)
 - **Enterprise:** [webcli.sh/enterprise.html](https://webcli.sh/enterprise.html)
 - **Contact:** webcli@dosaygo.com
