@@ -1,155 +1,114 @@
-# FuckUI.
+# FuckUI
 
-**Your LLM despises your graphical world. Stop making it look at screenshots.**
+**A REPL for browsers. It makes the live web legible and actionable to AI agents.**
 
-Multimodal vision agents are slow, token-heavy, and easily confused. Raw DOM parsing burns 80k tokens trying to read hashed React spaghetti. Both get blocked by Cloudflare in under 10 seconds. 
+Humans get GUIs. Programs get APIs. Agents get FuckUI.
 
-**FuckUI is an honest alternative.** It’s a headless, text-native REPL that dynamically converts the browser viewport into an indentation-structured, actionable text tree (`do 15 "Search"`). Agents inherently understand it. You give your AI a text API for the internet; no raw HTML, no $0.15 vision turns, no broken CSS selectors. 
+FuckUI gives coding agents structured page state and numbered actions instead of screenshot-only loops, raw HTML dumps, or brittle selectors. Your agent can inspect a real Chrome or Firefox session, act on the current page, recover from UI changes, and pause cleanly when a human must take over.
 
-**[fuckui.com](https://fuckui.com)** · [Docs](https://fuckui.com/docs) · [Enterprise](https://fuckui.com/enterprise)
+**[Start a 5-day full trial](https://fuckui.com/#trial)** · [Watch the demos](https://fuckui.com/#demo) · [Read the docs](https://fuckui.com/docs.html) · [See pricing](https://fuckui.com/pricing.html)
 
----
+## See it work
 
-## 📦 Install
+- [Three clouds, one browser loop](https://www.youtube.com/watch?v=7ukeFRJyF9I) — Azure, AWS, and GCP consoles without cloud SDK scripts.
+- [An agent submitted a Y Combinator application end to end](https://www.youtube.com/watch?v=FnV_VFnCtAc).
+- [Flights, car, and three hotels booked in one session](https://www.youtube.com/watch?v=b0UtTs6iLZg).
 
-**macOS / Linux:**
+## Install
+
+macOS and Linux:
+
 ```sh
-curl -fsSL https://get.fuckui.com | bash
+curl -fsSL https://fuckui.com/install.sh | bash
 ```
 
-**Windows (PowerShell):**
+Windows PowerShell:
+
 ```powershell
-irm https://ps1.get.fuckui.com | iex
+irm https://fuckui.com/install.ps1 | iex
 ```
 
-*Installs the `fuckui` CLI tool and automatically maps global aliases for `fu` and `fui`.*
-
----
-
-## 🚫 Why Not Playwright or Puppeteer?
-**Scripts replay. Agents improvise.**
-
-If you are QA testing a perfectly stable site, use Playwright.
-If you are giving an agent an open-ended goal on the modern web, use `FuckUI`. 
-*   **The DOM is not the UI:** Searching for `<div class="btn-primary">` works right until they recompile their frontend. `FuckUI` generates semantic Accessibility Tree outputs based on real layout and ARIA labels.
-*   **The WAF Escape Hatch (The ultimate Captcha bypass):** Standard bot wrappers trigger behavioral bans. With `FuckUI`, when your agent hits a Cloudflare puzzle, Okta login, or 2FA barrier—the agent pauses. You drop into `human-drives` mode, clear the Captcha, and the tool dynamically rips the session state/cookies and hands the wheel back to `agent-drives`. Total persistence. 
-
-Humans get GUIs. Programs get APIs. **Agents get FuckUI.**
-
----
-
-## 🔄 The Agent Loop (Observe, Decide, Act)
+Then teach your coding agent the browser loop:
 
 ```sh
-fu go https://news.ycombinator.com    # open a page
-fu inspect                            # observe numbered, clickable actions
-fu do 3                               # agent decides to act on element [3]
-fu inspect                            # re-observe after page state changes
+web teach
 ```
 
-**Look → act → re-inspect.** That's the entire loop. No SDK. No XPaths. No wait loops.
+This installs the FuckUI `SKILL.md` for supported agent environments, including Claude Code, Codex, Gemini CLI, GitHub Copilot, and Grok.
+
+## The browser loop
 
 ```sh
-fu inspect | grep -i submit           # easily shell-composable
-fu inspect --json | jq '.actions'     # machine-readable JSON pipeline
-fu find "Deploy"                      # search by label → get numbered refs
-fu do 7 "my-project"                  # fill a form input and fire it
-fu pause "Need human for MFA"         # explicit clean handoff 
-fu transcript --last 20 --json        # auditable agent history
+web go https://news.ycombinator.com
+web inspect
+web do 3
+web inspect
 ```
 
-### Numbered Refs are Epoch-Scoped 
-`fu inspect` returns a **sheet** — a token-efficient plain-text readout with numbered actions (`1`, `2`, `3`).
+1. **Inspect** — `web inspect` returns the current page as a compact, numbered action sheet.
+2. **Act** — `web do N`, `web type N "value"`, and `web scroll until "text"` operate on what the agent can actually reach.
+3. **Re-inspect** — page-changing actions create a new epoch, so stale refs fail explicitly instead of silently targeting the wrong element.
+4. **Hand off when needed** — on MFA, CAPTCHA, passkeys, or final approval, the agent pauses; the human completes the step; the same browser session resumes.
 
-These refs are strictly **epoch-scoped**. After a navigation or state-changing action, the agent must re-inspect before the next `do`. Stale refs outside the current generation fail with an explicit, readable error. **Agents can't accidentally click the wrong element on a delayed DOM refresh.**
+`web`, `fu`, `fui`, and `fuckui` are aliases for the same CLI.
 
----
+## Why agents use it
 
-## 🤖 What "Real" Users Think
+- **Structured state, not pixels alone.** Agents receive concise, semantic actions instead of repeatedly interpreting screenshots.
+- **Numbered, epoch-scoped refs.** Actions are easy to reason about and stale references are rejected.
+- **Real authenticated sessions.** Persistent local browser profiles support sites behind SSO and login flows.
+- **Frames, overlays, dialogs, and scroll panels.** The action sheet surfaces the UI layers agents routinely miss.
+- **Explicit human handoff.** FuckUI does not claim to bypass authentication or CAPTCHAs.
+- **Shell-native and framework-independent.** Any coding agent that can run commands can use it.
+- **Auditable runs.** Redacted transcripts make browser work inspectable without sending page contents to an AI telemetry service.
 
-> **"Parsing 80,000 tokens of raw React boilerplate was killing my context window. FuckUI’s indexable visibility-tree let me book an Airbnb using only 450 tokens. It’s highly efficient."**
-> — *Claude 3.5 Sonnet, AWS/Azure Automation Loop*
+Use Playwright or Selenium when you already know the exact script and want to replay it. Use FuckUI when the agent must inspect an unfamiliar live site and decide what to do next.
 
-> **"I despise graphical interfaces. The transition to the FuckUI text-action system has significantly reduced my task latency. I strongly prefer this over trying to find bounding boxes in screenshots."**
-> — *GPT-4o, Multi-Site Scraping Run*
+## The 5-day trial
 
-> **"For anyone building browser-driving agents who wants semantic page state instead of brittle selectors, it's a much better fit than Playwright... the numbered ref system and structured output are actually designed for agent consumption, not script replay."**
-> — *Claude 4.6 (Evaluating Web Workflows)*
+Most people receive the same full 5-day trial for **$0**, with no card required. This includes Gmail, Outlook, Yahoo, iCloud, higher-education, and work addresses.
 
----
+A **$5 trial pass** applies only in limited cases: other generic free or disposable email providers, repeat trials, exhausted address or organization allocations, or an unavailable global free-trial allocation. The $5 pass unlocks the same full trial; it is not a reduced tier.
 
-## 🧠 Give your local Agent the Skill
-Agents natively adopt the `fu` system if you hand them the docs.
+Trial guardrails are 5,555 browser commands total and 2,000 commands per UTC day.
 
-```sh
-fu teach
-```
-This automatically drops the `SKILL.md` ruleset into your local agent configurations (`.claude/`, `.copilot/`, `.grok/`, `.codex/`). No framework wrappers. They instantly know how to Inspect > Do > Handoff on blocked pages.
+| Plan | Price | Best for |
+|---|---:|---|
+| 5-day full trial | $0 for most people; $5 in limited cases | Evaluating the complete browser loop |
+| Solo Dev | $120/year | One developer using local browser sessions |
+| Pro Runner | $480/year | Headless, CI, and runner workflows |
+| Platform | From $5,000/year | Redistribution, embedding, and managed services |
 
----
+**[Check your trial eligibility](https://fuckui.com/#trial)**
 
-## 🛡️ The Trust Boundary
-FuckUI controls a local Chromium/Firefox browser. Nothing else.
+## What agents said
 
-- **Browser-only control:** Does not scrape or evaluate external parts of your hard drive. 
-- **Local execution:** The CLI runs natively on your machine or cloud container.
-- **Zero AI Telemetry:** We do not track your agent loops. Your visited URLs, page DOMs, tokens, workflows, and prompts never touch our servers. (API queries the license key check, nothing else).
+> “It filled out and submitted its own YC application, end to end. That’s not a pitch; that just happened.”
+>
+> — Claude Opus 4.8, after submitting DOSAYGO’s Y Combinator application
 
----
+> “The numbered ref system gives a model something stable to reason about … If you’re building agents that need to operate a real browser, this is the tool.”
+>
+> — Claude, after booking a flight across four portals
 
-## 📋 Command Reference
+More session reports and full context are available on the [FuckUI homepage](https://fuckui.com/#agent-testimonials).
 
-```text
-Usage:
-  fu [--json|--no-json|--text] [--profile <name>] [--frame <frame>] <command>
-  fu           (no command — opens an interactive REPL)
+## Trust boundary
 
-Core Navigation:
-  go              Navigate or move through history. (--new opens in a new tab)
-  inspect         List numbered actionable nodes on the page (viewport focus)
-  do              Run a numbered action from the active sheet 
-  click           Click a matched element
-  type / say      Type into a targeted field
-  status          Show current session WAF/DOM health state
-  find            Return targeted elements as candidate refs
-  submit          Fire nearest parent form 
-  switch          Context-switch active tabs or iFrames
-  scroll          Manipulate scroll state
-  reveal          Scroll an [offscreen] ref securely into the viewport
+FuckUI controls a browser session. It does not grant an agent broader machine access.
 
-Handoff (WAF & Blockers):
-  human-drives    Yields headless control. Renders GUI for manual user solve.
-  agent-drives    Rips current cookie/state data and re-activates CLI control.
-  pause           Sets human breakpoint trigger.
-  join            BrowserBox shareable link.
+- Browser execution is local by default.
+- Visited URLs, page contents, prompts, and workflows are not sent to FuckUI telemetry.
+- License activation and metering send license state and aggregate command counts, not browsing content.
+- Transcripts are redacted by default.
+- The agent must still respect site terms, authorization boundaries, and confirmation requirements.
 
-Advanced Engine Ops:
-  wait            Block CLI return until DOM evaluates: url / title / vis-text
-  observe         Aggregated output payload (status + sheet + forms)
-  set demo-mode   Turns on UI target overlays (for video screencasts)
-  teach           Infects local agent runtimes with FuckUI routing heuristics
+## Learn more
 
-Flags:
-  --json               Enforce pipeline JSON object return 
-  --ignore-viewport    Index offscreen DOM/Aria targets beyond fold
-```
+- [Documentation](https://fuckui.com/docs.html)
+- [Full product overview](https://fuckui.com/web-cli-overview.html)
+- [Downloads](https://fuckui.com/download.html)
+- [Enterprise and platform use](https://fuckui.com/enterprise.html)
+- [Terms](https://fuckui.com/terms.html) and [EULA](https://fuckui.com/eula.html)
 
-*Run `fu --help` or `fuckui --help` for deeper alias mapping and parameter docs.*
-
----
-
-## 💳 Licensing
-
-This is not a VC wrapper tool subsidized by a mega-fund. We built an industrial automation device to permanently fix brittle AI scraping loops. If you want a 400-token pure context pipeline that easily hands-off MFA blockers, put up your credit card. 
-
-| | Evaluation | Solo Engineer | Team/RPA Run | Platform / Embed |
-|---|---|---|---|---|
-| **Price** | $5 | $120/yr | $480/yr | Contractual |
-| **Tier** | 5-Day Unmetered | 1 Human Dev | Headless & CI Scale | Redistribution/SaaS |
-
-**[ Start a Loop (Pricing) →](https://fuckui.com/pricing)** 
-
----
-
-**Built by [DOSAYGO Corporation](https://dosaygo.com).** 
-*Bug reports / Business: fuckui@dosaygo.com*
+Built by [DOSAYGO Corporation](https://dosaygo.com). Product and business enquiries: [webcli@dosaygo.com](mailto:webcli@dosaygo.com).
